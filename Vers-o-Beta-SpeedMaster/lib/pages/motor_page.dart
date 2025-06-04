@@ -13,14 +13,17 @@ class _MotorPageState extends State<MotorPage> {
   double _velocidade = 0;
   final MotorService _motorService = MotorService();
 
-  void _toggleMotor(bool ligado) async {
-    setState(() => _motorLigado = ligado);
-    await _motorService.ligarMotor(ligado);
-  }
-
-  void _alterarVelocidade(double val) async {
-    setState(() => _velocidade = val);
-    await _motorService.setVelocidade(val);
+  void _atualizarMotor() async {
+    try {
+      await _motorService.atualizarMotor(
+        ligado: _motorLigado,
+        velocidade: _velocidade,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: ${e.toString()}')),
+      );
+    }
   }
 
   @override
@@ -33,11 +36,19 @@ class _MotorPageState extends State<MotorPage> {
           SwitchListTile(
             title: Text(_motorLigado ? 'Motor Ligado' : 'Motor Desligado'),
             value: _motorLigado,
-            onChanged: _toggleMotor,
+            onChanged: (val) {
+              setState(() => _motorLigado = val);
+              _atualizarMotor();
+            },
           ),
           Slider(
             value: _motorLigado ? _velocidade : 0,
-            onChanged: _motorLigado ? _alterarVelocidade : null,
+            onChanged: _motorLigado
+                ? (val) {
+                    setState(() => _velocidade = val);
+                    _atualizarMotor();
+                  }
+                : null,
             min: 0,
             max: 255,
             divisions: 255,

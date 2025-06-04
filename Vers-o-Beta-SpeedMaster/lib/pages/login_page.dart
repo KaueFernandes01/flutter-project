@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import 'register_page.dart';
 import '../services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,7 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _senhaController = TextEditingController();
   final AuthService _authService = AuthService();
 
-  void _login() async {
+    void _login() async {
     final login = _loginController.text.trim();
     final senha = _senhaController.text;
 
@@ -25,8 +26,12 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      final token = await _authService.login(login, senha);
-      print('TOKEN JWT: $token'); // Aqui você pode salvar com shared_preferences se quiser
+      final usuario_id = await _authService.login(login, senha);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('usuario_id', usuario_id);
+
+      print('Usuário logado com ID: $usuario_id');
 
       if (!mounted) return;
       Navigator.pushReplacement(
