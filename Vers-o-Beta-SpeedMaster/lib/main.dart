@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'pages/welcome_page.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  tz.initializeTimeZones(); 
+
   runApp(const MyApp());
 }
 

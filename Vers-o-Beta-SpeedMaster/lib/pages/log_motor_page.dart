@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import '../services/log_service.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart'; 
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-class LogPage extends StatefulWidget {
-  final int userId;
+class LogMotorPage extends StatefulWidget {
+  final int usuarioId;
 
-  const LogPage({super.key, required this.userId});
+  const LogMotorPage({super.key, required this.usuarioId});
 
   @override
-  State<LogPage> createState() => _LogPageState();
+  State<LogMotorPage> createState() => _LogMotorPageState();
 }
 
-class _LogPageState extends State<LogPage> {
+class _LogMotorPageState extends State<LogMotorPage> {
   bool timezoneLoaded = false;
 
   @override
@@ -46,16 +46,16 @@ class _LogPageState extends State<LogPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Registro de Atividades')),
+      appBar: AppBar(title: const Text('Logs do Motor')),
       body: FutureBuilder<List<dynamic>>(
-        future: LogService().getLogsDoUsuario(widget.userId),
+        future: LogService().getLogsDoMotor(widget.usuarioId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar logs: ${snapshot.error}'));
+            return Center(child: Text('Erro ao carregar logs do motor: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Nenhum log encontrado.'));
+            return const Center(child: Text('Nenhum log de motor encontrado.'));
           }
 
           final List<dynamic> logs = snapshot.data!;
@@ -64,19 +64,27 @@ class _LogPageState extends State<LogPage> {
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index];
-              final String acao = log['acao'] ?? 'Ação desconhecida';
-              final String detalhes = log['detalhes'] ?? 'Sem detalhes';
-              final String dataHora = log['data_hora'] ?? 'Data não disponível';
 
-              final String dataFormatada = formatarDataLocal(dataHora);
+              final String status = log['status'] ?? 'Desconhecido';
+              final int velocidade = log['velocidade'] ?? 0;
+              final String dataHoraISO = log['data_hora']?.toString() ?? 'Data não disponível';
+
+              final String dataFormatada = formatarDataLocal(dataHoraISO);
+
+              String acao = 'Alterou o motor para $status com velocidade $velocidade RPM';
+              if (status.toLowerCase().contains('ligado')) {
+                acao = 'Ligou o motor ($velocidade RPM)';
+              } else if (status.toLowerCase().contains('desligado')) {
+                acao = 'Desligou o motor';
+              }
 
               return ListTile(
-                leading: const Icon(Icons.history),
+                leading: const Icon(Icons.settings_remote, color: Colors.green),
                 title: Text(acao),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(detalhes),
+                    const Text('Detalhes do log', style: TextStyle(fontSize: 12)),
                     const SizedBox(height: 4),
                     Text('Data: $dataFormatada'),
                   ],

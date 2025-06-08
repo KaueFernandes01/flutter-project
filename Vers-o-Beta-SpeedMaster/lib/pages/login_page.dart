@@ -26,12 +26,12 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      final usuario_id = await _authService.login(login, senha);
+      final usuarioId = await _authService.login(login, senha);
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('usuario_id', usuario_id);
+      await prefs.setInt('usuario_id', usuarioId);
 
-      print('Usuário logado com ID: $usuario_id');
+      print('Usuário logado com ID: $usuarioId');
 
       if (!mounted) return;
       Navigator.pushReplacement(
