@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => LogPage(userId: usuarioId!),
+          builder: (_) => LogPage(usuarioId: usuarioId!),
         ),
       );
     } else {

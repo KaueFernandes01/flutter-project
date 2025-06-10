@@ -17,6 +17,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _confirmController = TextEditingController();
   final AuthService _authService = AuthService();
 
+  bool _isLoading = false;
+
   Future<void> _register() async {
     final nome = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -39,21 +41,25 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
     try {
-      await _authService.register({
-        'nome': nome,
-        'email': email,
-        'login': login,
-        'password': password,
-      });
+      await _authService.register(nome, email, login, password);
 
       if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cadastro realizado com sucesso!")),
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     } catch (e) {
       _showError(e.toString().replaceAll('Exception:', '').trim());
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -64,23 +70,35 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _loginController.dispose();
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Cadastro")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome completo')),
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(controller: _loginController, decoration: const InputDecoration(labelText: 'Login')),
-            TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Senha'), obscureText: true),
-            TextField(controller: _confirmController, decoration: const InputDecoration(labelText: 'Confirmar Senha'), obscureText: true),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _register, child: const Text("Registrar")),
-          ],
-        ),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nome completo')),
+                  TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
+                  TextField(controller: _loginController, decoration: const InputDecoration(labelText: 'Login')),
+                  TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Senha'), obscureText: true),
+                  TextField(controller: _confirmController, decoration: const InputDecoration(labelText: 'Confirmar Senha'), obscureText: true),
+                  const SizedBox(height: 20),
+                  ElevatedButton(onPressed: _register, child: const Text("Registrar")),
+                ],
+              ),
+            ),
     );
   }
 }

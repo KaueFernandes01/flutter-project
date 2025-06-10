@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import 'log_page.dart';
 import 'log_motor_page.dart';
+import 'edit_profile_page.dart';
+import 'login_page.dart'; 
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,6 +23,8 @@ class _ProfilePageState extends State<ProfilePage> {
     _carregarUsuarioId().then((_) {
       if (usuarioId != null) {
         usuarioFuture = AuthService().buscarUsuario(usuarioId!);
+      } else {
+        usuarioFuture = Future.error('Usuário não autenticado');
       }
     });
   }
@@ -30,6 +34,88 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       usuarioId = prefs.getInt('usuario_id');
     });
+  }
+
+  Future<void> _editarPerfil() async {
+    if (!mounted || usuarioId == null) return;
+
+    final snapshot = await usuarioFuture;
+
+    final nameController = TextEditingController(text: snapshot['nome']);
+    final emailController = TextEditingController(text: snapshot['email']);
+    final loginController = TextEditingController(text: snapshot['login']);
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(
+          initialName: nameController.text.trim(),
+          initialEmail: emailController.text.trim(),
+          initialLogin: loginController.text.trim(),
+          usuarioId: usuarioId!,
+        ),
+      ),
+    );
+
+    if (result != null && result is Map<String, String>) {
+      try {
+        setState(() {
+          usuarioFuture = Future.value({
+            'nome': result['nome'] ?? 'Nome não informado',
+            'email': result['email'] ?? 'Email não informado',
+            'login': result['login'] ?? 'Login não informado',
+          });
+        });
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao atualizar perfil: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _excluirConta() async {
+    if (!mounted || usuarioId == null) return;
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Conta'),
+        content: const Text('Tem certeza que deseja excluir sua conta permanentemente?'),
+        actions: [
+          TextButton(
+            onPressed: Navigator.of(context).pop,
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      try {
+        await AuthService().excluirUsuario(usuarioId!);
+
+        await AuthService().logout();
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao excluir conta: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -54,6 +140,9 @@ class _ProfilePageState extends State<ProfilePage> {
           }
 
           final usuario = snapshot.data!;
+          final String nome = usuario['nome'] ?? 'Não informado';
+          final String email = usuario['email'] ?? 'Não informado';
+          final String login = usuario['login'] ?? 'Não informado';
 
           return Padding(
             padding: const EdgeInsets.all(24),
@@ -68,7 +157,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Dados do usuário
                 Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -85,28 +173,59 @@ class _ProfilePageState extends State<ProfilePage> {
                         ListTile(
                           leading: const Icon(Icons.person, color: Colors.blue),
                           title: const Text('Nome'),
-                          subtitle: Text(usuario['nome'] ?? 'Não informado'),
+                          subtitle: Text(nome),
                         ),
                         const Divider(),
                         ListTile(
                           leading: const Icon(Icons.email, color: Colors.blue),
                           title: const Text('Email'),
-                          subtitle: Text(usuario['email'] ?? 'Não informado'),
+                          subtitle: Text(email),
+                        ),
+                        const Divider(),
+                        ListTile(
+                          leading: const Icon(Icons.login, color: Colors.blue),
+                          title: const Text('Login'),
+                          subtitle: Text(login),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 24),
 
-                // Botão Logs do Usuário
+                // Botão de editar perfil
+                ElevatedButton.icon(
+                  onPressed: _editarPerfil,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Editar Perfil'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                ElevatedButton.icon(
+                  onPressed: _excluirConta,
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  label: const Text('Excluir Conta'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade900,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
                 ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => LogPage(userId: usuarioId!),
+                        builder: (_) => LogPage(usuarioId: usuarioId!),
                       ),
                     );
                   },
@@ -120,7 +239,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 16),
 
-                // Botão Logs do Motor
                 ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(

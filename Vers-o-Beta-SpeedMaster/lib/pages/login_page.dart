@@ -30,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('usuario_id', usuarioId);
+      
+      
 
       print('Usuário logado com ID: $usuarioId');
 

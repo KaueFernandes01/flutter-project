@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart';
 import 'register_page.dart';
-import 'forgot_password_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -27,10 +26,6 @@ class WelcomePage extends StatelessWidget {
               ElevatedButton(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
                 child: const Text('Cadastrar'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordPage())),
-                child: const Text('Esqueci minha senha'),
               ),
             ],
           ),

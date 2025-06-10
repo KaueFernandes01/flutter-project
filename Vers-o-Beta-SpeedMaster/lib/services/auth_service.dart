@@ -36,18 +36,88 @@ class AuthService {
       throw Exception('Erro ao realizar login: ${response.body}');
     }
   }
+  Future<void> atualizarPerfil({
+  required int usuarioId,
+  required String nome,
+  required String email,
+  required String login,
+  String? senha,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
 
-  Future<void> register(Map<String, dynamic> userData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/usuarios'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(userData),
-    );
+  if (token == null) {
+    throw Exception('Token não encontrado. Faça login novamente.');
+  }
 
-    if (response.statusCode != 201) {
-      throw Exception('Erro ao registrar: ${response.body}');
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
+
+  final body = {
+    'nome': nome,
+    'email': email,
+    'login': login,
+  };
+
+  if (senha != null && senha.isNotEmpty) {
+    body['senha'] = senha;
+  }
+
+  final response = await http.put(
+    Uri.parse('$baseUrl/usuarios/$usuarioId'), 
+    headers: headers,
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode != 200) {
+    try {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['erro'] ?? 'Erro ao atualizar perfil');
+    } catch (_) {
+      throw Exception('Erro ao atualizar perfil. Código: ${response.statusCode}');
     }
   }
+}
+Future<void> excluirUsuario(int usuarioId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
+
+  final response = await http.delete(
+    Uri.parse('$baseUrl/usuarios/$usuarioId'),
+    headers: headers,
+  );
+
+  if (response.statusCode != 200) {
+    final errorData = jsonDecode(response.body);
+    throw Exception(errorData['erro'] ?? 'Erro ao excluir conta');
+  }
+}
+  Future<void> register(String nome, String email, String login, String password) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/usuarios/'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'nome': nome,
+      'email': email,
+      'login': login,
+      'senha': password,
+    }),
+  );
+
+  if (response.statusCode == 201) {
+    return;
+  } else {
+    final errorData = jsonDecode(response.body);
+    throw Exception(errorData['erro'] ?? 'Erro ao registrar usuário');
+  }
+}
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -65,7 +135,10 @@ class AuthService {
     return prefs.containsKey('token');
   }
 
-  
+  Future<int?> buscarUsuarioId() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getInt('usuario_id');
+}
   Future<Map<String, dynamic>> buscarUsuario(int usuarioId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');

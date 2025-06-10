@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MotorService {
-  final String baseUrl = "https://api-motor-r0ji.onrender.com";  
+  final String baseUrl = "https://api-motor-r0ji.onrender.com";     
 
   Future<void> atualizarMotor({
     required int usuarioId,

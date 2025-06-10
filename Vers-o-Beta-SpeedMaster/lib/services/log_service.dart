@@ -15,7 +15,7 @@ class LogService {
     };
 
     final response = await http.get(
-      Uri.parse('$baseUrl/logs/usuario/$usuarioId'),
+      Uri.parse('$baseUrl/log/usuario/$usuarioId'),
       headers: headers,
     );
 
